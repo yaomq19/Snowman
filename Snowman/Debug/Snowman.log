@@ -1,0 +1,16 @@
+﻿  animation.c
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutInitWindowSize@8，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutInitDisplayMode@4，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutMainLoop@0，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutPostRedisplay@0，函数 _idle 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutIdleFunc@4，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutKeyboardFunc@4，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutReshapeFunc@4，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutDisplayFunc@4，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutGet@4，函数 _idle 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp__glutSetKeyRepeat@4，函数 _main 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp____glutInitWithExit@12，函数 _glutInit_ATEXIT_HACK@8 中引用了该符号
+animation.obj : error LNK2019: 无法解析的外部符号 __imp____glutCreateWindowWithExit@8，函数 _glutCreateWindow_ATEXIT_HACK@4 中引用了该符号
+D:\githubRepositories\SnowMan\Snowman\\lib\freeglutd.lib : warning LNK4272: 库计算机类型“x64”与目标计算机类型“x86”冲突
+D:\githubRepositories\SnowMan\Snowman\\lib\freeglut_staticd.lib : warning LNK4272: 库计算机类型“x64”与目标计算机类型“x86”冲突
+D:\githubRepositories\SnowMan\Debug\Snowman.exe : fatal error LNK1120: 12 个无法解析的外部命令
