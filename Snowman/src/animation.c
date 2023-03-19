@@ -1,70 +1,44 @@
-/******************************************************************************
- *
- * Animation v1.0 (23/02/2021)
- *
- * This template provides a basic FPS-limited render loop for an animated scene.
- *
- ******************************************************************************/
-
 #include <Windows.h>
 #include <freeglut.h>
 #include <math.h>
 #include <stdio.h>
 
-float angle = 0.0f;
- /******************************************************************************
-  * Animation & Timing Setup
-  ******************************************************************************/
-
-  // Target frame rate (number of Frames Per Second).
-#define TARGET_FPS 60				
-
-// Ideal time each frame should be displayed for (in milliseconds).
-const unsigned int FRAME_TIME = 1000 / TARGET_FPS;
-
-// Frame time in fractional seconds.
-// Note: This is calculated to accurately reflect the truncated integer value of
-// FRAME_TIME, which is used for timing, rather than the more accurate fractional
-// value we'd get if we simply calculated "FRAME_TIME_SEC = 1.0f / TARGET_FPS".
-const float FRAME_TIME_SEC = (1000 / TARGET_FPS) / 1000.0f;
-
-// Time we started preparing the current frame (in milliseconds since GLUT was initialized).
-unsigned int frameStartTime = 0;
-
-/******************************************************************************
- * Keyboard Input Handling Setup
- ******************************************************************************/
-
- // Define all character keys used for input (add any new key definitions here).
- // Note: USE ONLY LOWERCASE CHARACTERS HERE. The keyboard handler provided converts all
- // characters typed by the user to lowercase, so the SHIFT key is ignored.
-
+#define MY_PI (3.1415926)
+#define NumSnow 1000
+#define TARGET_FPS 60	
 #define KEY_EXIT	27 // Escape key.
 #define KEY_QUIT	113// q key
-/******************************************************************************
- * GLUT Callback Prototypes
- ******************************************************************************/
 
+const unsigned int FRAME_TIME = 1000 / TARGET_FPS;
+const float FRAME_TIME_SEC = (1000 / TARGET_FPS) / 1000.0f;
+unsigned int frameStartTime = 0;
+
+static float ambientLight[] = { 0.2f, 0.2f, 0.2f, 1.0f };
+static float diffuseLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+static float specularLight[] = { 1.0f, 1.0f, 1.0f, 1.0f };
+static float lightPosition[] = { 0.0f, 0.0f, 1.5f, 1.0f };
+static float lightPosition1[] = { 0.0f, 4.0f, 1.5f, 1.0f };
+static float lightPosition2[] = { 0.0f, -50.f, -48.f, 1.0f };
+
+float x_plane1, x_plane2, x_plane3, x_plane4;
+float z_plane1, z_plane2, z_plane3, z_plane4;
+typedef struct Snow
+{
+	//x0,y0,z0为雪片起始坐标，t0为起始时间
+	//x,y,z为当前坐标，t为当前下落时间
+	float x0, y0, z0, t0,t,x,y,z;
+}Snow;
+Snow snows[NumSnow];
+	
 void display(void);
 void reshape(int width, int h);
 void keyPressed(unsigned char key, int x, int y);
 void idle(void);
 
-/******************************************************************************
- * Animation-Specific Function Prototypes (add your own here)
- ******************************************************************************/
-
 void main(int argc, char **argv);
 void init(void);
 void think(void);
 
-/******************************************************************************
- * Animation-Specific Setup (Add your own definitions, constants, and globals here)
- ******************************************************************************/
-
-/******************************************************************************
- * Entry Point (don't put anything except the main function here)
- ******************************************************************************/
 const int SCREEN_WIDTH = 1000;
 const int SCREEN_HEIGHT = 800;
 
@@ -94,32 +68,20 @@ void main(int argc, char **argv)
 	// Enter the main drawing loop (this will never return).
 	glutMainLoop();
 }
-
-/******************************************************************************
- * GLUT Callbacks (don't add any other functions here)
- ******************************************************************************/
-
- /*
-	 Called when GLUT wants us to (re)draw the current animation frame.
-
-	 Note: This function must not do anything to update the state of our simulated
-	 world. Animation (moving or rotating things, responding to keyboard input,
-	 etc.) should only be performed within the think() function provided below.
- */
+void drawSnows(float x,float y,float z,float R)
+{
+	int n = 80;     
+	glColor3f(1.0, 1.0, 1.0);
+	glBegin(GL_POLYGON);
+	for (int i = 0; i < n; i++)
+	{
+		glVertex3f(R * cos(2 * MY_PI * i / n)+x, R * sin(2 * MY_PI * i / n)+y,z);
+	}
+	glEnd();
+}
 void display(void)
 {
-	/*
-		TEMPLATE: REPLACE THIS COMMENT WITH YOUR DRAWING CODE
-		
-		Separate reusable pieces of drawing code into functions, which you can add
-		to the "Animation-Specific Functions" section below.
-		
-		Remember to add prototypes for any new functions to the "Animation-Specific
-		Function Prototypes" section near the top of this template.
-	*/
-	
 	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
 	glMatrixMode(GL_MODELVIEW);
 	// Reset transformations
 	glLoadIdentity();
@@ -127,15 +89,87 @@ void display(void)
 	gluLookAt(0.0f, 0.0f, 10.0f,
 		0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f);
+	
+	glEnable(GL_COLOR_MATERIAL);
 
-	glRotatef(angle, 0.0f, 1.0f, 0.0f);
-	glutSolidSphere(1.0, 40, 50);
+	//背景
+	glColorMaterial(GL_FRONT, GL_DIFFUSE);
+	glColor3f(17.f / 255.f, 119.f / 255.f, 176.f / 255.f);
+	glColorMaterial(GL_FRONT, GL_AMBIENT);
+	glColor3f(17.f / 255.f, 119.f / 255.f, 176.f / 255.f);
+
+	glBegin(GL_POLYGON);
+	glNormal3f(0.0f, 0.0f, 1.0f);
+	glVertex3f(-100, 100, -50);
+	glVertex3f(-100, -100, -50);
+	glVertex3f(100, -100, -50);
+	glVertex3f(100, 100, -50);
+	glEnd();
+
+	//球体
+	glColorMaterial(GL_FRONT, GL_DIFFUSE);
+	glColor3f(0.5, 0.5, 0.5);
+	glColorMaterial(GL_FRONT, GL_AMBIENT);
+	glColor3f(0.8, 0.8, 0.8);
+
+	glPushMatrix();
+	glTranslatef(0, -1, 0);
+	glutSolidSphere(0.7, 50, 50);
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0, 0.1, 0.2);
+	glutSolidSphere(0.5, 50, 50);
+	glPopMatrix();
+	//眼睛
+	glColorMaterial(GL_FRONT, GL_DIFFUSE);
+	glColor3f(0.0, 0.0, 0.0);
+	glColorMaterial(GL_FRONT, GL_AMBIENT);
+	glColor3f(0.0, 0.0, 0.0);
+
+
+	glPushMatrix();
+	glTranslatef(-0.2, 0.2, 0.7);
+	glutSolidSphere(0.07, 50, 50);
+	glPopMatrix();
+
+	glPushMatrix();
+	glTranslatef(0.2, 0.2, 0.7);
+	glutSolidSphere(0.07, 50, 50);
+	glPopMatrix();
+	//鼻子
+	glColorMaterial(GL_FRONT, GL_DIFFUSE);
+	glColor3f(242.f/255.f, 123.f/255.f, 31.f/255.f);
+	glColorMaterial(GL_FRONT, GL_AMBIENT);
+	glColor3f(242.f / 255.f, 123.f / 255.f, 31.f / 255.f);
+
+	glPushMatrix();
+	glTranslatef(0.0, 0.1, 0.7);
+	glutSolidSphere(0.07, 5, 5);
+	glPopMatrix();
+	//多边形平面
+	glColorMaterial(GL_FRONT, GL_DIFFUSE);
+	glColor3f(0.8, 0.8, 0.8);
+	glColorMaterial(GL_FRONT, GL_AMBIENT);
+	glColor3f(1.0, 1.0, 1.0);
+
+	glBegin(GL_POLYGON); 
+	glNormal3f(0.0f, 1.0f, 0.0f);
+	glVertex3f(x_plane1, -2.f, z_plane1);
+	glVertex3f(x_plane2, -2.f, z_plane2);
+	glVertex3f(x_plane3, -2.f, z_plane3);
+	glVertex3f(x_plane4, -2.f, z_plane4);
+	glEnd();
+
+	//雪
+	int i = 0;
+	for (i = 0; i < NumSnow; i++)
+	{
+		drawSnows(snows[i].x, snows[i].y, snows[i].z, 0.05);
+	}
+	
 	glutSwapBuffers();
 }
-
-/*
-	Called when the OpenGL window has been resized.
-*/
 void reshape(int width, int h)
 {
 	if (h == 0)
@@ -147,10 +181,6 @@ void reshape(int width, int h)
 	gluPerspective(45 * h * 1.0/ SCREEN_HEIGHT, ratio, 1, 100);
 	glMatrixMode(GL_MODELVIEW);
 }
-
-/*
-	Called each time a character key (e.g. a letter, number, or symbol) is pressed.
-*/
 void keyPressed(unsigned char key, int x, int y)
 {
 	switch (tolower(key)) {
@@ -166,14 +196,6 @@ void keyPressed(unsigned char key, int x, int y)
 		break;
 	}
 }
-
-/*
-	Called by GLUT when it's not rendering a frame.
-
-	Note: We use this to handle animation and timing. You shouldn't need to modify
-	this callback at all. Instead, place your animation logic (e.g. moving or rotating
-	things) within the think() method provided with this template.
-*/
 void idle(void)
 {
 	// Wait until it's time to render the next frame.
@@ -195,77 +217,93 @@ void idle(void)
 
 	glutPostRedisplay(); // Tell OpenGL there's a new frame ready to be drawn.
 }
-
-/******************************************************************************
- * Animation-Specific Functions (Add your own functions at the end of this section)
- ******************************************************************************/
-
-/*
-	Initialise OpenGL and set up our scene before we begin the render loop.
-*/
 void init(void)
 {
-	glClearColor(0.5, 0.1, 0.9, 1.0);
+	glClearColor(92.f/255.f, 179.f/255.f, 204.f/255.f, 1.0);
 	gluLookAt(0.0f, 0.0f, 10.0f,
 		0.0f, 0.0f, 0.0f,
 		0.0f, 1.0f, 0.0f);
-	glEnable(GL_DEPTH_TEST);
-	glMatrixMode(GL_MODELVIEW);
+	glEnable(GL_DEPTH_TEST);//开启深度测试
+	glShadeModel(GL_SMOOTH);//设置明暗处理,有两种选择模式：GL_FLAT（不渐变）和GL_SMOOTH（渐变过渡）
+	/** 设置0号光源 */
+	glEnable(GL_LIGHTING);
+	glLightfv(GL_LIGHT0, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT0, GL_DIFFUSE, diffuseLight);
+	glLightfv(GL_LIGHT0, GL_SPECULAR, specularLight);
+	glLightfv(GL_LIGHT0, GL_POSITION, lightPosition);
+	glEnable(GL_LIGHT0); 
+
+	/** 设置1号光源 */
+	glLightfv(GL_LIGHT1, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT1, GL_DIFFUSE, diffuseLight);
+	glLightfv(GL_LIGHT1, GL_SPECULAR, specularLight);
+	glLightfv(GL_LIGHT1, GL_POSITION, lightPosition1);
+	glEnable(GL_LIGHT1); 
+
+	/** 设置2号光源 */
+	glLightfv(GL_LIGHT2, GL_AMBIENT, ambientLight);
+	glLightfv(GL_LIGHT2, GL_DIFFUSE, diffuseLight);
+	glLightfv(GL_LIGHT2, GL_SPECULAR, specularLight);
+	glLightfv(GL_LIGHT2, GL_POSITION, lightPosition2);
+	glEnable(GL_LIGHT2); 
+
+
+	srand(time(NULL));
+	//随机化初始平面的四个顶点坐标
+	x_plane1 = -5 + rand()%5-2;
+	x_plane2 =  -5 + rand() % 5 - 2;
+	x_plane3 =  5 + rand() % 5 - 2;
+	x_plane4 =  5 + rand() % 5 - 2;
+
+	z_plane1 = -5 + rand() % 5 - 2;
+	z_plane2 = +5 + rand() % 5 - 2;
+	z_plane3 = +5 + rand() % 5 - 2;
+	z_plane4 = -5 + rand() % 5 - 2;
+
+	int i = 0;
+	int scaleX = 100;
+	int scaleY = 2500;
+	int scaleZ = 5;
+	//随机生成每个雪片的起始坐标和起始时间
+	for (i = 0; i < NumSnow; i++)
+	{
+		snows[i].x0 = 0.1f * (rand() % scaleX - (scaleX / 2));
+		snows[i].y0 = 5;
+		snows[i].z0 = rand() % scaleZ - (scaleZ / 2);
+		//若起始时间为负数则暂时不应显示，表示雪花还没有生成
+		snows[i].t0 = rand()%1000 - 999;
+
+		snows[i].x = snows[i].x0;
+		snows[i].y = snows[i].y0;
+		snows[i].z = snows[i].z0;
+		snows[i].t = snows[i].t0;
+	}
 }
-
-/*
-	Advance our animation by FRAME_TIME milliseconds.
-
-	Note: Our template's GLUT idle() callback calls this once before each new
-	frame is drawn, EXCEPT the very first frame drawn after our application
-	starts. Any setup required before the first frame is drawn should be placed
-	in init().
-*/
 void think(void)
 {
-	/*
-		TEMPLATE: REPLACE THIS COMMENT WITH YOUR ANIMATION/SIMULATION CODE
-
-		In this function, we update all the variables that control the animated
-		parts of our simulated world. For example: if you have a moving box, this is
-		where you update its coordinates to make it move. If you have something that
-		spins around, here's where you update its angle.
-
-		NOTHING CAN BE DRAWN IN HERE: you can only update the variables that control
-		how everything will be drawn later in display().
-
-		How much do we move or rotate things? Because we use a fixed frame rate, we
-		assume there's always FRAME_TIME milliseconds between drawing each frame. So,
-		every time think() is called, we need to work out how far things should have
-		moved, rotated, or otherwise changed in that period of time.
-
-		Movement example:
-		* Let's assume a distance of 1.0 GL units is 1 metre.
-		* Let's assume we want something to move 2 metres per second on the x axis
-		* Each frame, we'd need to update its position like this:
-			x += 2 * (FRAME_TIME / 1000.0f)
-		* Note that we have to convert FRAME_TIME to seconds. We can skip this by
-		  using a constant defined earlier in this template:
-			x += 2 * FRAME_TIME_SEC;
-
-		Rotation example:
-		* Let's assume we want something to do one complete 360-degree rotation every
-		  second (i.e. 60 Revolutions Per Minute, or RPM).
-		* Each frame, we'd need to update our object's angle like this (we'll use the
-		  FRAME_TIME_SEC constant as per the example above):
-			a += 360 * FRAME_TIME_SEC;
-
-		This works for any type of "per second" change: just multiply the amount you'd
-		want to move in a full second by FRAME_TIME_SEC, and add or subtract that
-		from whatever variable you're updating.
-
-		You can use this same approach to animate other things like color, opacity,
-		brightness of lights, etc.
-	*/
-	// Clear Color and Depth Buffers
-	
-	
-	angle += 0.1f;
+	int i = 0;
+	for (i = 0; i < NumSnow; i++)
+	{
+		//x坐标归位
+		snows[i].x = snows[i].x0;
+		//z坐标归位
+		snows[i].z = snows[i].z0;
+		if (snows[i].t < 0) {
+			//如果t小于0的话说明该雪花当前不应被显示，所以将其y坐标设为一个极大值
+			snows[i].y = 100;
+		}
+		else {
+			//如果t大于等于0则正常显示，使用重力加速度公式
+			snows[i].y = snows[i].y0 - (0.1 * 0.00098 * snows[i].t * snows[i].t);
+		}
+		//如果雪片的y坐标低于平面
+		if (snows[i].y <= -2.f)
+		{
+			//重置y坐标和时间信息
+			snows[i].y = snows[i].y0;
+			snows[i].t = snows[i].t0;
+		}
+		//每个雪花的下落时间自增1个单位
+		snows[i].t += 1;
+	}
 }
-
-/******************************************************************************/
